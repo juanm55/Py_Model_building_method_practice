@@ -2,31 +2,35 @@
 
 # Importing the libraries
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pandas as pd
 
+def Get_the_Data_set(filename):
+    import pandas as pd
+    Dataset = pd.read_csv(filename)
+    X = Dataset.iloc[:, :-1].to_numpy()
+    y = Dataset.iloc[:, -1].to_numpy()
+    return Dataset, X, y
+
 # Importing the dataset
-dataset = pd.read_csv('50_Startups.csv')
-x = dataset.iloc[:, :-1].to_numpy()
-y = dataset.iloc[:, -1].to_numpy()
+dataset, X, y = Get_the_Data_set('50_Startups.csv')
 
 #Now we need to take care of the Categorical Variables by encoding them
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 State_encoder = LabelEncoder()
 
-x[:, -1] = State_encoder.fit_transform(x[:, -1])
+X[:, -1] = State_encoder.fit_transform(X[:, -1])
 
 one_hot_encoder = OneHotEncoder(categorical_features = [3] )
 
-x = one_hot_encoder.fit_transform(x).toarray()
+X = one_hot_encoder.fit_transform(X).toarray()
 
 #Avoiding the Dummy Trap section
-x = x[:, 1:]
-
+X = X[:, 1:]
 
 # Splitting the dataset into the Training set and Test set
 from sklearn.model_selection import train_test_split
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 0)
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 0)
 
 
 from sklearn.linear_model import LinearRegression
@@ -43,9 +47,9 @@ import statsmodels.api as sm
 
 # Now we need to add a column of "1" for the sm to work
 
-x = np.append(arr = np.ones((len(x),1)).astype(int), values = x , axis = 1 )
+X = np.append(arr = np.ones((len(X),1)).astype(int), values = X , axis = 1 )
 
-x_opt = x[:, [0,1,2,3,4,5]]
+x_opt = X[:, [0,1,2,3,4,5]]
 regressor_OLS = sm.OLS(endog = y, exog = x_opt ).fit()
 regressor_OLS.summary()
 
@@ -69,19 +73,11 @@ regressor_OLS.summary()
 
 
 
-# Feature Scaling
-"""from sklearn.preprocessing import StandardScaler
-sc_X = StandardScaler()
-X_train = sc_X.fit_transform(X_train)
-X_test = sc_X.transform(X_test)
-sc_y = StandardScaler()
-y_train = sc_y.fit_transform(y_train)"""
+"""
+For Backwards elimination
+"""
 
-
-
-
-
-import statsmodels.formula.api as sm
+import statsmodels.regression.linear_model as sm
 def backwardElimination(x, SL):
     numVars = len(x[0])
     temp = np.zeros((50,6)).astype(int)
@@ -107,5 +103,20 @@ def backwardElimination(x, SL):
     return x
  
 SL = 0.05
-x_opt = x[:, [0, 1, 2, 3, 4, 5]]
+x_opt = X[:, [0, 1, 2, 3, 4, 5]]
 x_Modeled = backwardElimination(x_opt, SL)
+
+
+sm.ols
+
+"""
+Forward Elimination
+"""
+
+
+
+
+
+"""
+Bidirectional elimination
+"""
