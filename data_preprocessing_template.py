@@ -6,11 +6,17 @@ import numpy as np
 import pandas as pd
 
 def Get_the_Data_set(filename):
+    """Used to import the CSV 'filename' which will have [:, :-1] dependent
+    variables and the last column will be the dependent variable
+    
+    Vars:
+        filename: String
+    """
     import pandas as pd
     Dataset = pd.read_csv(filename)
-    X = Dataset.iloc[:, :-1].to_numpy()
+    x = Dataset.iloc[:, :-1].to_numpy()
     y = Dataset.iloc[:, -1].to_numpy()
-    return Dataset, X, y
+    return Dataset, x, y
 
 # Importing the dataset
 dataset, X, y = Get_the_Data_set('50_Startups.csv')
@@ -18,6 +24,7 @@ dataset, X, y = Get_the_Data_set('50_Startups.csv')
 #Now we need to take care of the Categorical Variables by encoding them
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 State_encoder = LabelEncoder()
+
 
 X[:, -1] = State_encoder.fit_transform(X[:, -1])
 
@@ -80,7 +87,7 @@ For Backwards elimination
 import statsmodels.regression.linear_model as sm
 def backwardElimination(x, SL):
     numVars = len(x[0])
-    temp = np.zeros((50,6)).astype(int)
+    temp = np.zeros((50,numVars)).astype(int)
     for i in range(0, numVars):
         regressor_OLS = sm.OLS(y, x).fit()
         maxVar = max(regressor_OLS.pvalues).astype(float)
@@ -101,17 +108,61 @@ def backwardElimination(x, SL):
                         continue
     regressor_OLS.summary()
     return x
- 
+
 SL = 0.05
-x_opt = X[:, [0, 1, 2, 3, 4, 5]]
+x_opt = X[:, [0, 1, 2, 3]]
 x_Modeled = backwardElimination(x_opt, SL)
 
 
-sm.ols
+
+def ForwardSelection(X, y, Significance_Level, Selected_sofar):
+    """
+    The idea is to iterate over the different characteristics, model for each of them and then pick the best, if the R2 of the model is still not good enough (to be over the Significance_Level) you call the function again, and it gets the characteristics that we already picked on the last call, and selects a new one.
+    
+    This cycle continues until the R2 is better than the Significance_level set for the initial call
+    """
+    import statsmodels.regression.linear_model as sm
+    if Selected_sofar:
+        numVars = len(X[0])
+    else:
+        numVars = len(X[0]) - len(Selected_sofar)
+        
+    preliminar_result = np.zeros((numVars,2)).astype(float)
+        
+    for r in range(0, numVars):
+        if len(Selected_sofar) == 0:
+            X_local = X[:, r]
+        else:
+            X_local = X[:, Selected_sofar.append(r)]
+        regressor_OLS = sm.OLS(y, X_local).fit()
+        preliminar_result[r] = [r, regressor_OLS.rsquared_adj.astype(float)]
+    
+    def takeSecond(elem):
+        return elem[1]
+    
+    preliminar_result = sorted(preliminar_result, key=takeSecond, reverse=True)
+    selected_this_cycle = []
+    selected_this_cycle.append(preliminar_result[0][0])
+    
+    if preliminar_result[0][1] < Significance_Level:
+        ForwardSelection(X, y, Significance_Level, selected_this_cycle)
+    else:
+        return selected_this_cycle
+
+
+ForwardSelection(X, y, .95, [])
+
+
+    
 
 """
-Forward Elimination
+Forward selection
 """
+
+
+
+
+
 
 
 
