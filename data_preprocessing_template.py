@@ -115,56 +115,59 @@ x_Modeled = backwardElimination(x_opt, SL)
 
 
 
-def ForwardSelection(X, y, Significance_Level, Selected_sofar):
+def ForwardSelection(X, y, Target_R2, Selected_sofar=None):
     """
     The idea is to iterate over the different characteristics, model for each of them and then pick the best, if the R2 of the model is still not good enough (to be over the Significance_Level) you call the function again, and it gets the characteristics that we already picked on the last call, and selects a new one.
     
     This cycle continues until the R2 is better than the Significance_level set for the initial call
     """
     import statsmodels.regression.linear_model as sm
-    if Selected_sofar:
-        numVars = len(X[0])
-    else:
-        numVars = len(X[0]) - len(Selected_sofar)
+    # if Selected_sofar is None:
+    numVars = len(X[0])
+    # else:
+    #     numVars = len(X[0]) - len([Selected_sofar])
         
     preliminar_result = np.zeros((numVars,2)).astype(float)
-        
+    
+    print('numVars ', numVars)
+    
     for r in range(0, numVars):
-        if len(Selected_sofar) == 0:
-            X_local = X[:, r]
-        else:
-            X_local = X[:, Selected_sofar.append(r)]
-        regressor_OLS = sm.OLS(y, X_local).fit()
-        preliminar_result[r] = [r, regressor_OLS.rsquared_adj.astype(float)]
+        print('r', r)
+        if Selected_sofar is None or r not in [Selected_sofar]:
+            if Selected_sofar is None:
+                X_local = X[:, r]
+            else:
+                X_local = X[:, [r, Selected_sofar]]
+                
+            print(X_local)
+            regressor_OLS = sm.OLS(y, X_local).fit()
+            preliminar_result[r] = [r, regressor_OLS.rsquared_adj.astype(float)]
     
     def takeSecond(elem):
         return elem[1]
     
     preliminar_result = sorted(preliminar_result, key=takeSecond, reverse=True)
-    selected_this_cycle = []
-    selected_this_cycle.append(preliminar_result[0][0])
+    selected_this_cycle = preliminar_result[0][0].astype(int)
+    print('Selected this cycle', selected_this_cycle, preliminar_result[0][1])
+    if Selected_sofar is not None:
+        selected_this_cycle = [selected_this_cycle, Selected_sofar]
     
-    if preliminar_result[0][1] < Significance_Level:
-        ForwardSelection(X, y, Significance_Level, selected_this_cycle)
+    if preliminar_result[0][1] < Target_R2:
+        ForwardSelection(X, y, Target_R2, selected_this_cycle)
     else:
         return selected_this_cycle
 
 
-ForwardSelection(X, y, .95, [])
+ForwardSelection(X, y, .95)
 
+np.append(X[:, 4], X[:, 2], axis=0)
 
-    
-
-"""
-Forward selection
-"""
+X[:, [2,4 ]]
 
 
 
-
-
-
-
+regressor_OLS = sm.OLS(y, X[:, [2, 4]]).fit()
+regressor_OLS.rsquared_adj.astype(float)
 
 
 
